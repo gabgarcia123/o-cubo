@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O Cubo v5.0 - AI UI, Area Snipper & Multi-Page Cloner</title>
+  <style>
+    :root {
+      --bg-deep: #070b09;
+      --bg-panel: #0c1410;
+      --bg-card: #101b15;
+      --neon: #00ff88;
+      --neon-soft: rgba(0, 255, 136, 0.18);
+      --neon-glow: rgba(0, 255, 136, 0.55);
+      --emerald: #10b981;
+      --cyan: #00e5ff;
+      --amber: #fbbf24;
+      --purple: #c084fc;
+      --text-main: #e6fff3;
+      --text-dim: #7aa892;
+      --border-dim: rgba(0, 255, 136, 0.24);
+      --cube-size: 64px;
+      --cube-half: 32px;
+      --cube-expand: 0px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(0, 255, 136, 0.14), transparent 55%),
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 22px 22px, 22px 22px;
+      color: var(--text-main);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* HEADER + CENA 3D DO CUBO 3x3x3 */
+    .cube-header {
+      padding: 9px 12px 7px;
+      border-bottom: 1px solid var(--border-dim);
+      background: linear-gradient(180deg, rgba(16, 27, 21, 0.92) 0%, rgba(7, 11, 9, 0.96) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      position: relative;
+    }
+
+    .brand-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 800;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      font-size: 11.5px;
+      color: var(--neon);
+      text-shadow: 0 0 10px rgba(0, 255, 136, 0.45);
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon);
+      box-shadow: 0 0 10px var(--neon);
+    }
+
+    .state-badge {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--neon);
+      background: rgba(0, 255, 136, 0.1);
+      color: var(--neon);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    }
+
+    /* PALCO 3D */
+    .cube-viewport {
+      width: 112px;
+      height: 98px;
+      perspective: 550px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .cube-halo {
+      position: absolute;
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.24) 0%, transparent 70%);
+      filter: blur(8px);
+      pointer-events: none;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .cube-3d {
+      width: var(--cube-size);
+      height: var(--cube-size);
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-24deg) rotateY(38deg);
+    }
+
+    .cube-face {
+      position: absolute;
+      width: var(--cube-size);
+      height: var(--cube-size);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 3px;
+      padding: 3px;
+      background: rgba(5, 12, 9, 0.72);
+      border: 1px solid rgba(0, 255, 136, 0.65);
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(0, 255, 136, 0.22);
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.35s ease,
+                  border-color 0.35s ease;
+    }
+
+    .cubelet {
+      background: rgba(0, 255, 136, 0.16);
+      border: 1px solid rgba(0, 255, 136, 0.75);
+      border-radius: 2px;
+      box-shadow: inset 0 0 6px rgba(0, 255, 136, 0.35);
+      transition: transform 0.4s ease, background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .cube-face.front  { transform: rotateY(0deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+    .cube-face.back   { transform: rotateY(180deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+    .cube-face.right  { transform: rotateY(90deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+    .cube-face.left   { transform: rotateY(-90deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+    .cube-face.top    { transform: rotateX(90deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+    .cube-face.bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-half) + var(--cube-expand))); }
+
+    .cube-scene[data-state="idle"] .cube-3d {
+      animation: cubeRotateIdle 11s linear infinite;
+    }
+    .cube-scene[data-state="scanning"] .cube-3d {
+      animation: cubeRotateScan 2.2s linear infinite;
+    }
+    .cube-scene[data-state="scanning"] .cube-face {
+      box-shadow: 0 0 24px rgba(0, 255, 136, 0.75);
+      border-color: #00ff88;
+    }
+    .cube-scene[data-state="scanning"] .cubelet {
+      background: rgba(0, 255, 136, 0.36);
+      animation: cubeletPulse 0.9s ease-in-out infinite alternate;
+    }
+    .cube-scene[data-state="scanning"] .cube-halo {
+      transform: scale(1.25);
+      opacity: 1;
+    }
+    .cube-scene[data-state="absorbing"] {
+      --cube-expand: 18px;
+    }
+    .cube-scene[data-state="absorbing"] .cube-3d {
+      animation: cubeRotateAbsorb 3.6s ease-in-out infinite;
+    }
+    .cube-scene[data-state="absorbing"] .cube-face {
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.88);
+    }
+    .cube-scene[data-state="absorbing"] .cubelet:nth-child(odd) {
+      transform: translateZ(9px) scale(0.92);
+      background: rgba(0, 255, 136, 0.52);
+    }
+    .cube-scene[data-state="absorbing"] .cubelet:nth-child(even) {
+      transform: translateZ(-5px) scale(0.88);
+      background: rgba(16, 185, 129, 0.35);
+    }
+    .cube-scene[data-state="ready"] .cube-3d {
+      animation: cubeReadyFloat 4s ease-in-out infinite;
+    }
+    .cube-scene[data-state="ready"] .cube-face {
+      border-color: #34d399;
+      background: rgba(6, 40, 28, 0.85);
+      box-shadow: 0 0 26px rgba(16, 185, 129, 0.8), inset 0 0 12px rgba(0, 255, 136, 0.45);
+    }
+    .cube-scene[data-state="ready"] .cubelet {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.55), rgba(16, 185, 129, 0.35));
+      border-color: #6ee7b7;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+    }
+
+    @keyframes cubeRotateIdle {
+      0% { transform: rotateX(-24deg) rotateY(0deg); }
+      100% { transform: rotateX(-24deg) rotateY(360deg); }
+    }
+    @keyframes cubeRotateScan {
+      0% { transform: rotateX(-28deg) rotateY(0deg) scale(1.03); }
+      50% { transform: rotateX(-18deg) rotateY(180deg) scale(1.08); }
+      100% { transform: rotateX(-28deg) rotateY(360deg) scale(1.03); }
+    }
+    @keyframes cubeRotateAbsorb {
+      0% { transform: rotateX(-25deg) rotateY(0deg) rotateZ(0deg); }
+      50% { transform: rotateX(20deg) rotateY(180deg) rotateZ(12deg); }
+      100% { transform: rotateX(-25deg) rotateY(360deg) rotateZ(0deg); }
+    }
+    @keyframes cubeReadyFloat {
+      0%, 100% { transform: rotateX(-22deg) rotateY(38deg) translateY(0px); }
+      50% { transform: rotateX(-18deg) rotateY(46deg) translateY(-5px); }
+    }
+    @keyframes cubeletPulse {
+      0% { opacity: 0.65; }
+      100% { opacity: 1; box-shadow: 0 0 12px #00ff88; }
+    }
+
+    .state-switcher {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .state-chip {
+      background: rgba(16, 27, 21, 0.8);
+      color: var(--text-dim);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 9.5px;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .state-chip:hover,
+    .state-chip.active {
+      color: #070b09;
+      background: var(--neon);
+      border-color: var(--neon);
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+    }
+
+    /* CONTEÚDO PRINCIPAL */
+    .panel-body {
+      padding: 10px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* GRADE 2x2 DE MODOS DE CAPTURA */
+    .capture-actions-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-mode {
+      padding: 8px 6px;
+      border-radius: 7px;
+      font-weight: 700;
+      font-size: 10.5px;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn-inspect {
+      border: 1px solid var(--neon);
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.22) 0%, rgba(16, 185, 129, 0.08) 100%);
+      color: var(--neon);
+    }
+    .btn-inspect:hover,
+    .btn-inspect.active {
+      background: var(--neon);
+      color: #070b09;
+      box-shadow: 0 0 18px rgba(0, 255, 136, 0.65);
+    }
+
+    .btn-snipper {
+      border: 1px solid var(--amber);
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.06) 100%);
+      color: #fde68a;
+    }
+    .btn-snipper:hover,
+    .btn-snipper.active {
+      background: var(--amber);
+      color: #070b09;
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.65);
+    }
+
+    .btn-fullsite {
+      border: 1px solid var(--cyan);
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.18) 0%, rgba(0, 255, 136, 0.08) 100%);
+      color: #7df9ff;
+    }
+    .btn-fullsite:hover {
+      background: var(--cyan);
+      color: #070b09;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.65);
+    }
+
+    .btn-spider {
+      border: 1px solid var(--purple);
+      background: linear-gradient(135deg, rgba(192, 132, 252, 0.22) 0%, rgba(139, 92, 246, 0.08) 100%);
+      color: #e9d5ff;
+    }
+    .btn-spider:hover,
+    .btn-spider.active {
+      background: var(--purple);
+      color: #070b09;
+      box-shadow: 0 0 18px rgba(192, 132, 252, 0.65);
+    }
+
+    /* PAINEL DO CRAWLER DE SUB-PÁGINAS (LINKS INTERNOS) */
+    .spider-drawer {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(20, 14, 34, 0.9);
+      border: 1px solid var(--purple);
+      border-radius: 8px;
+      padding: 9px;
+    }
+
+    .spider-links-list {
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(7, 11, 9, 0.75);
+      border-radius: 5px;
+      border: 1px solid rgba(192, 132, 252, 0.25);
+    }
+
+    .spider-link-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      color: #e9d5ff;
+      cursor: pointer;
+    }
+
+    .spider-link-item span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* BARRA DA SACOLA MULTI-SELECT */
+    .bag-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid var(--cyan);
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 11px;
+      color: #a5f3fc;
+    }
+
+    .shortcut-hint {
+      font-size: 9.8px;
+      color: var(--text-dim);
+      background: rgba(12, 20, 16, 0.8);
+      border: 1px dashed rgba(0, 255, 136, 0.25);
+      border-radius: 6px;
+      padding: 5px 8px;
+      line-height: 1.4;
+    }
+
+    .shortcut-hint kbd {
+      background: rgba(0, 255, 136, 0.15);
+      border: 1px solid rgba(0, 255, 136, 0.45);
+      color: var(--neon);
+      border-radius: 3px;
+      padding: 0 4px;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 9px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--neon);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .field-grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 6px;
+    }
+
+    .field-grid-2 > div {
+      min-width: 0;
+    }
+
+    .field-label {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+      display: block;
+      font-weight: 600;
+    }
+
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      background: #070b09;
+      border: 1px solid rgba(0, 255, 136, 0.28);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.35);
+    }
+
+    .textarea {
+      resize: vertical;
+      min-height: 42px;
+    }
+
+    .btn-secondary {
+      background: rgba(0, 255, 136, 0.12);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--neon);
+      color: #070b09;
+    }
+
+    .ai-actions-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 6px;
+    }
+
+    .btn-primary-action {
+      background: linear-gradient(90deg, #00ff88 0%, #10b981 100%);
+      border: none;
+      color: #05120c;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      box-shadow: 0 0 14px rgba(0, 255, 136, 0.35);
+      transition: filter 0.15s ease;
+    }
+
+    .btn-primary-action:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-refine-action {
+      background: rgba(192, 132, 252, 0.15);
+      border: 1px solid var(--purple);
+      color: #e9d5ff;
+      border-radius: 6px;
+      padding: 8px 8px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+    }
+
+    .btn-refine-action:hover {
+      background: var(--purple);
+      color: #070b09;
+      box-shadow: 0 0 14px rgba(192, 132, 252, 0.6);
+    }
+
+    /* PREVIEW DA CAPTURA RECORTADA & DESIGN TOKENS */
+    .crop-preview-box {
+      width: 100%;
+      max-height: 115px;
+      overflow: hidden;
+      border-radius: 6px;
+      border: 1px dashed rgba(0, 255, 136, 0.3);
+      background: #050806;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+    }
+
+    .crop-preview-box img {
+      max-width: 100%;
+      max-height: 110px;
+      object-fit: contain;
+      display: none;
+    }
+
+    .crop-placeholder {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      padding: 8px;
+      text-align: center;
+    }
+
+    .tokens-bar {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      padding-top: 2px;
+    }
+
+    .color-swatch {
+      width: 15px;
+      height: 15px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+    }
+
+    .token-pill {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 9.5px;
+      color: var(--text-dim);
+      background: rgba(0, 255, 136, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.22);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    /* ABAS DE RESULTADO (4 ABAS) */
+    .tabs-header {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: #09100c;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border-dim);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      padding: 6px 4px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: rgba(0, 255, 136, 0.18);
+      color: var(--neon);
+      border: 1px solid rgba(0, 255, 136, 0.5);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+    }
+
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    .code-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .code-editor {
+      width: 100%;
+      min-height: 220px;
+      max-height: 380px;
+      resize: vertical;
+      background: #050806;
+      border: 1px solid rgba(0, 255, 136, 0.32);
+      border-radius: 6px;
+      padding: 10px;
+      color: #a7f3d0;
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      outline: none;
+    }
+
+    .code-editor:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
+    }
+
+    .sandbox-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      background: #040705;
+      border: 1px solid rgba(0, 255, 136, 0.35);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .sandbox-frame {
+      width: 100%;
+      height: 310px;
+      border: none;
+      background: #070b09;
+      transition: width 0.25s ease, height 0.25s ease;
+    }
+
+    .sandbox-frame.viewport-mobile {
+      width: 375px;
+      border-left: 1px dashed rgba(0, 255, 136, 0.35);
+      border-right: 1px dashed rgba(0, 255, 136, 0.35);
+    }
+
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .asset-card {
+      background: #070c09;
+      border: 1px solid rgba(0, 255, 136, 0.22);
+      border-radius: 6px;
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      text-align: center;
+    }
+
+    .asset-preview {
+      width: 100%;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 4px;
+      overflow: hidden;
+      color: var(--neon);
+    }
+
+    .asset-preview svg,
+    .asset-preview img {
+      max-width: 40px;
+      max-height: 40px;
+      object-fit: contain;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: #070c09;
+      border: 1px solid rgba(0, 255, 136, 0.22);
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .history-item:hover {
+      border-color: var(--neon);
+    }
+
+    .history-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .history-title {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 10.5px;
+      color: var(--neon);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-sub {
+      font-size: 9.5px;
+      color: var(--text-dim);
+    }
+
+    .status-line {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      min-height: 15px;
+    }
+
+    .status-line.error {
+      color: #ff6b8b;
+    }
+  </style>
+</head>
+<body>
+  <!-- CABEÇALHO COM O CUBO 3x3x3 EM CSS 3D -->
+  <header class="cube-header cube-scene" id="cube-scene" data-state="idle">
+    <div class="brand-bar">
+      <div class="brand-title">
+        <span class="brand-dot"></span>
+        <span>O CUBO 5.0 // SPIDER & AREA SNIPPER</span>
+      </div>
+      <span class="state-badge" id="cube-state-label">IDLE</span>
+    </div>
+
+    <div class="cube-viewport" title="O Cubo 3x3x3 Interativo">
+      <div class="cube-halo"></div>
+      <div class="cube-3d" id="cube-3d">
+        <div class="cube-face front">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+        <div class="cube-face back">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+        <div class="cube-face right">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+        <div class="cube-face left">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+        <div class="cube-face top">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+        <div class="cube-face bottom">
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+          <div class="cubelet"></div><div class="cubelet"></div><div class="cubelet"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-switcher" aria-label="Estados visuais do Cubo">
+      <button type="button" class="state-chip active" data-cube-state="idle">idle</button>
+      <button type="button" class="state-chip" data-cube-state="scanning">scanning</button>
+      <button type="button" class="state-chip" data-cube-state="absorbing">absorbing</button>
+      <button type="button" class="state-chip" data-cube-state="ready">ready</button>
+    </div>
+  </header>
+
+  <main class="panel-body">
+    <!-- GRADE 2x2: 4 MODOS DE CAPTURA (ELEMENTO, RECORTE DE TELA, PÁGINA ATUAL, MULTI-PÁGINAS) -->
+    <div class="capture-actions-grid">
+      <button type="button" id="btn-toggle-inspect" class="btn-mode btn-inspect" title="Inspecionar elemento individual ou usar Shift+Clique para Sacola">
+        <span>🎯 Inspecionar UI</span>
+      </button>
+      <button type="button" id="btn-area-snipper" class="btn-mode btn-snipper" title="Desenhar um retângulo na tela para capturar todos os itens dentro da área">
+        <span>✂️ Recorte de Tela</span>
+      </button>
+      <button type="button" id="btn-capture-fullsite" class="btn-mode btn-fullsite" title="Clonar a página inteira atual com Auto-Scroll e CSS completo">
+        <span>🌐 Página Atual</span>
+      </button>
+      <button type="button" id="btn-spider-multipage" class="btn-mode btn-spider" title="Descobrir todos os links internos do site e clonar as outras páginas também">
+        <span>🕸️ Site + Links</span>
+      </button>
+    </div>
+
+    <!-- GAVETA DO CRAWLER DE LINKS INTERNOS (MULTI-PÁGINAS) -->
+    <section class="spider-drawer" id="spider-drawer">
+      <div class="card-title" style="color: #e9d5ff;">
+        <span>🕸️ Links Internos Encontrados</span>
+        <button type="button" id="btn-close-spider" class="btn-secondary" style="padding:2px 6px;font-size:9.5px;">✕</button>
+      </div>
+      <div id="spider-links-list" class="spider-links-list">
+        <div class="crop-placeholder">Buscando links internos na página...</div>
+      </div>
+      <button type="button" id="btn-start-crawl" class="btn-primary-action" style="background: linear-gradient(90deg, #c084fc, #8b5cf6); color: #070b09;">
+        🚀 Clonar Página Inicial + Links Marcados
+      </button>
+    </section>
+
+    <!-- BARRA DA SACOLA MULTI-SELECT -->
+    <div class="bag-bar" id="bag-bar">
+      <span id="bag-count-label">🧩 0 itens na Sacola Multi-Select</span>
+      <button type="button" id="btn-finalize-bag" class="btn-secondary">Clonar Sacola ›</button>
+    </div>
+
+    <div class="shortcut-hint">
+      <kbd>↑</kbd>/<kbd>↓</kbd> Pai/Filho • <kbd>Shift+Clique</kbd> Sacola • <kbd>✂️ Recorte</kbd> Arrastar Área • <kbd>🕸️ Links</kbd> Clonar Sub-páginas
+    </div>
+
+    <!-- CONFIGURAÇÃO MULTI-MODELOS DE IA & STACK -->
+    <section class="card">
+      <div class="card-title">
+        <span>Motor de IA Multimodal (Opcional)</span>
+        <span id="provider-badge" style="font-size: 9.5px; color: var(--text-dim);">Multi-Provider</span>
+      </div>
+
+      <div class="field-grid-2">
+        <div>
+          <label class="field-label" for="select-provider">Provedor de IA</label>
+          <select id="select-provider" class="select">
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI (GPT / o4)</option>
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="openrouter">OpenRouter (Universal)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="select-model">Modelo Multimodal</label>
+          <select id="select-model" class="select"></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <input
+          type="password"
+          id="input-api-key"
+          class="input"
+          placeholder="API Key (deixe vazio p/ Clone Visual 1:1 Nativo)..."
+          autocomplete="off"
+        />
+        <button type="button" id="btn-save-key" class="btn-secondary">Salvar Key</button>
+      </div>
+
+      <div>
+        <label class="field-label" for="select-stack">Stack de Saída (para IA)</label>
+        <select id="select-stack" class="select">
+          <option value="react-tailwind">React + Tailwind CSS</option>
+          <option value="nextjs-tailwind">Next.js (App Router + Tailwind)</option>
+          <option value="vue-tailwind">Vue 3 (SFC + Tailwind)</option>
+          <option value="html-tailwind">HTML5 + Tailwind CDN (Arquivo Único)</option>
+          <option value="html-css">HTML5 + CSS Puro (Moderno)</option>
+        </select>
+      </div>
+
+      <textarea
+        id="input-extra-prompt"
+        class="textarea"
+        placeholder="Prompt de criação ou refinamento (ex: 'Deixe o fundo em glassmorphism roxo', 'Adicione modo mobile')..."
+      ></textarea>
+
+      <div class="ai-actions-row">
+        <button type="button" id="btn-regenerate" class="btn-primary-action" title="Converte com IA (ou exibe Clone Visual 1:1 se sem API Key)">
+          ⚡ Clonar / Refatorar
+        </button>
+        <button type="button" id="btn-refine-code" class="btn-refine-action" title="Aplica o prompt extra diretamente sobre o código já gerado na aba">
+          ✨ Refinar Código
+        </button>
+      </div>
+    </section>
+
+    <!-- RESUMO DA CAPTURA MULTIMODAL + DESIGN TOKENS -->
+    <section class="card">
+      <div class="card-title">
+        <span>Alvo Capturado</span>
+        <span id="captured-element-tag" style="color: var(--text-dim); font-weight: 400;">Nenhum alvo</span>
+      </div>
+      <div class="crop-preview-box">
+        <img id="cropped-preview-img" alt="Recorte do componente, área ou panorama do site" />
+        <div id="crop-placeholder" class="crop-placeholder">
+          Escolha: 🎯 Inspecionar, ✂️ Recorte de Tela, 🌐 Página Atual ou 🕸️ Site + Links.
+        </div>
+      </div>
+      <div class="tokens-bar" id="tokens-bar" title="Paleta e Fontes detectadas na página"></div>
+      <div class="status-line" id="status-message">Pronto para escanear.</div>
+    </section>
+
+    <!-- ABAS DE RESULTADO: CÓDIGO, PREVIEW, ASSETS & HISTÓRICO -->
+    <div class="tabs-header">
+      <button type="button" class="tab-btn active" data-tab="tab-code">Código</button>
+      <button type="button" class="tab-btn" data-tab="tab-preview">Preview</button>
+      <button type="button" class="tab-btn" data-tab="tab-assets">Assets</button>
+      <button type="button" class="tab-btn" data-tab="tab-history">Histórico</button>
+    </div>
+
+    <!-- ABA 1: EDITOR DE CÓDIGO AO VIVO -->
+    <section id="tab-code" class="tab-pane active">
+      <div class="code-toolbar">
+        <span style="font-size: 10px; color: var(--text-dim);" id="code-meta-label">Editor Live Sync (editável)</span>
+        <div class="toolbar-group">
+          <button type="button" id="btn-copy-code" class="btn-secondary">📋 Copiar</button>
+          <button type="button" id="btn-download-code" class="btn-secondary">💾 Baixar .html</button>
+        </div>
+      </div>
+      <textarea
+        id="code-output"
+        class="code-editor"
+        spellcheck="false"
+      >// O código clonado (ou refatorado via IA) aparecerá aqui. Clique em 💾 Baixar para salvar o arquivo .html completo e navegável!</textarea>
+    </section>
+
+    <!-- ABA 2: PREVIEW AO VIVO (SANDBOX IFRAME + NOVA ABA TELA CHEIA) -->
+    <section id="tab-preview" class="tab-pane">
+      <div class="code-toolbar">
+        <div class="toolbar-group">
+          <button type="button" id="btn-vp-desktop" class="btn-secondary">🖥️ Desktop</button>
+          <button type="button" id="btn-vp-mobile" class="btn-secondary">📱 Mobile</button>
+        </div>
+        <div class="toolbar-group">
+          <button type="button" id="btn-download-preview" class="btn-secondary" title="Baixar o arquivo .html completo do clone">💾 Baixar .html</button>
+          <button type="button" id="btn-fullscreen-preview" class="btn-secondary" title="Abrir Preview em Nova Aba (Tela Cheia)">↗ Tela Cheia</button>
+        </div>
+      </div>
+      <div class="sandbox-wrapper">
+        <iframe
+          id="sandbox-iframe"
+          class="sandbox-frame"
+          src="sandbox.html"
+          title="Sandbox Live Preview"
+        ></iframe>
+      </div>
+    </section>
+
+    <!-- ABA 3: EXTRATOR DE ASSETS (SVGs, IMAGENS E FONTES) -->
+    <section id="tab-assets" class="tab-pane">
+      <div class="code-toolbar">
+        <span style="font-size: 10px; color: var(--text-dim);" id="assets-count-label">SVGs e Imagens extraídos</span>
+      </div>
+      <div id="assets-grid" class="assets-grid">
+        <div class="crop-placeholder" style="grid-column: span 2;">
+          Capture um componente, recorte ou site para listar e copiar seus SVGs e imagens.
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 4: HISTÓRICO DE CAPTURAS -->
+    <section id="tab-history" class="tab-pane">
+      <div class="code-toolbar">
+        <span style="font-size: 10px; color: var(--text-dim);">Últimas capturas salvas</span>
+        <button type="button" id="btn-clear-history" class="btn-secondary">🗑️ Limpar</button>
+      </div>
+      <div id="history-list" class="history-list">
+        <div class="crop-placeholder">Nenhuma captura no histórico ainda.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
