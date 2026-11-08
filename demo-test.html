@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O Cubo 2.0 - Demo Test Lab (Componentes & Site Inteiro)</title>
+  <style>
+    :root {
+      --bg: #070b09;
+      --neon: #00ff88;
+      --cyan: #00e5ff;
+      --neon-dim: rgba(0, 255, 136, 0.25);
+      --text: #ecfdf5;
+      --muted: #86b39d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(0, 255, 136, 0.12), transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.12), transparent 40%),
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 28px 36px 60px;
+    }
+
+    /* 1. NAVBAR MODERNA */
+    .cyber-navbar {
+      max-width: 1080px;
+      margin: 0 auto 36px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: rgba(12, 22, 17, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 255, 136, 0.32);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 255, 136, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--neon);
+    }
+
+    .nav-cube-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #00ff88, #059669);
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.65);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+      padding: 4px;
+    }
+
+    .nav-cube-icon span {
+      background: #070b09;
+      border-radius: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      opacity: 0.85;
+      transition: color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--neon);
+      opacity: 1;
+    }
+
+    .nav-cta {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--neon);
+      background: rgba(0, 255, 136, 0.14);
+      color: var(--neon);
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+
+    /* 2. SEÇÃO HERO PARA TESTAR CAPTURA DE SEÇÃO E SITE INTEIRO */
+    .hero-section {
+      max-width: 1080px;
+      margin: 0 auto 38px;
+      padding: 36px 32px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(14, 28, 21, 0.9) 0%, rgba(7, 13, 10, 0.95) 100%);
+      border: 1px solid rgba(0, 255, 136, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+
+    .hero-copy {
+      max-width: 600px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      border: 1px solid rgba(0, 229, 255, 0.45);
+      background: rgba(0, 229, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .hero-title {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    .hero-title span {
+      color: var(--neon);
+      text-shadow: 0 0 18px rgba(0, 255, 136, 0.35);
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* LAYOUT PRINCIPAL */
+    .lab-container {
+      max-width: 1080px;
+      margin: 0 auto 44px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .lab-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 3. CARD DE PREÇOS NEON */
+    .neon-pricing-card {
+      background: linear-gradient(165deg, rgba(16, 30, 23, 0.96) 0%, rgba(8, 14, 11, 0.98) 100%);
+      border: 1px solid rgba(0, 255, 136, 0.55);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.75),
+        0 0 28px rgba(0, 255, 136, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pricing-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(0, 255, 136, 0.16);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .pricing-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    .pricing-subtitle {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.45;
+    }
+
+    .pricing-value {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 22px;
+    }
+
+    .pricing-currency {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--neon);
+    }
+
+    .pricing-number {
+      font-size: 44px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -1px;
+      text-shadow: 0 0 16px rgba(0, 255, 136, 0.35);
+    }
+
+    .pricing-period {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      margin-bottom: 26px;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      color: #d1fae5;
+    }
+
+    .check-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 255, 136, 0.2);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .pricing-action-btn {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(90deg, #00ff88 0%, #10b981 100%);
+      color: #05110b;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      box-shadow: 0 0 22px rgba(0, 255, 136, 0.5);
+    }
+
+    /* 4. BOTÃO ANIMADO + PAINEL DE TESTE DO INSPETOR */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .interactive-card {
+      background: rgba(12, 22, 17, 0.9);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .interactive-card h3 {
+      font-size: 15px;
+      color: var(--neon);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .interactive-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .cyber-animated-btn {
+      position: relative;
+      padding: 15px 26px;
+      border-radius: 12px;
+      border: 2px solid #00ff88;
+      background: #070b09;
+      color: #00ff88;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow:
+        0 0 18px rgba(0, 255, 136, 0.45),
+        inset 0 0 12px rgba(0, 255, 136, 0.2);
+      animation: buttonNeonPulse 2.2s infinite ease-in-out;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .cyber-animated-btn:hover {
+      background: #00ff88;
+      color: #070b09;
+      box-shadow: 0 0 32px rgba(0, 255, 136, 0.9);
+    }
+
+    @keyframes buttonNeonPulse {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.4), inset 0 0 10px rgba(0, 255, 136, 0.18);
+      }
+      50% {
+        box-shadow: 0 0 28px rgba(0, 255, 136, 0.85), inset 0 0 18px rgba(0, 255, 136, 0.35);
+      }
+    }
+
+    .debug-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .debug-btn {
+      padding: 8px 11px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 255, 136, 0.4);
+      background: rgba(0, 255, 136, 0.1);
+      color: var(--text);
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+
+    .debug-btn:hover {
+      border-color: var(--neon);
+      color: var(--neon);
+    }
+
+    .debug-output {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 11px;
+      background: #040705;
+      border: 1px solid rgba(0, 255, 136, 0.25);
+      border-radius: 8px;
+      padding: 10px;
+      color: #6ee7b7;
+      max-height: 180px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    /* 5. FOOTER PARA COMPLETAR ESTRUTURA DE SITE INTEIRO */
+    .cyber-footer {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 255, 136, 0.22);
+      background: rgba(10, 18, 14, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- 1. NAVBAR MODERNA -->
+  <header class="cyber-navbar" id="demo-navbar">
+    <div class="nav-brand">
+      <div class="nav-cube-icon">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <span>NEONGRID // UI 2.0</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#components">Componentes</a></li>
+      <li><a href="#pricing">Preços</a></li>
+      <li><a href="#fullsite">Full-Site Clone</a></li>
+    </ul>
+    <button type="button" class="nav-cta">Conectar Cubo</button>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section class="hero-section" id="demo-hero">
+    <div class="hero-copy">
+      <span class="hero-tag">NOVO // CAPTURA DE SITE INTEIRO & MULTI-IA</span>
+      <h1 class="hero-title">Clone qualquer componente ou <span>Site Inteiro</span> com 1 clique.</h1>
+      <p class="hero-desc">
+        Navegue dinamicamente pela hierarquia DOM usando as setas ↑/↓ ou Alt+Scroll, extraia a paleta global de cores e gere código em React, Next.js, Vue 3 ou HTML+Tailwind com Gemini, GPT-4o, Claude ou OpenRouter.
+      </p>
+    </div>
+    <button type="button" class="cyber-animated-btn" id="demo-animated-btn">
+      <span>⚡ Disparar Clonagem Quântica</span>
+    </button>
+  </section>
+
+  <!-- 3. GRID CENTRAL -->
+  <main class="lab-container">
+    <!-- CARD DE PREÇOS NEON -->
+    <article class="neon-pricing-card" id="demo-pricing-card">
+      <span class="pricing-badge">Mais Popular // Pro AI</span>
+      <h2 class="pricing-title">Plano Matrix Neural</h2>
+      <p class="pricing-subtitle">
+        Clonagem ilimitada de interfaces e páginas inteiras com extração de Design Tokens e múltiplos modelos de IA.
+      </p>
+      <div class="pricing-value">
+        <span class="pricing-currency">R$</span>
+        <span class="pricing-number">79</span>
+        <span class="pricing-period">/ mês</span>
+      </div>
+      <ul class="pricing-features">
+        <li><span class="check-dot">✓</span> Captura de Componente ou Site Inteiro (Auto-Scroll)</li>
+        <li><span class="check-dot">✓</span> Gemini 2.5 Pro/Flash, GPT-4o, Claude Sonnet 4 & OpenRouter</li>
+        <li><span class="check-dot">✓</span> Navegação DOM rápida com ↑/↓, Alt+Scroll e Espaço</li>
+        <li><span class="check-dot">✓</span> Exportação React, Next.js, Vue 3 e HTML + Tailwind</li>
+      </ul>
+      <button type="button" class="pricing-action-btn">Assinar Plano Matrix</button>
+    </article>
+
+    <!-- LABORATÓRIO INTERATIVO -->
+    <div class="right-column">
+      <section class="interactive-card">
+        <h3>Laboratório de Teste Direto (Content Script 2.0)</h3>
+        <p>
+          Teste aqui os novos recursos do <code>content.js</code> (HUD interativo com navegação Pai/Filho, extração de Design Tokens e mapeamento de Site Inteiro):
+        </p>
+        <div class="debug-toolbar">
+          <button type="button" class="debug-btn" id="btn-test-inspector">
+            🎯 Ativar Inspetor Dinâmico
+          </button>
+          <button type="button" class="debug-btn" id="btn-test-snipper">
+            ✂️ Recorte de Tela Livre
+          </button>
+          <button type="button" class="debug-btn" id="btn-test-fullsite">
+            🌐 Clonar Página Atual
+          </button>
+          <button type="button" class="debug-btn" id="btn-test-spider">
+            🕸️ Clonar Site + Sub-Páginas
+          </button>
+        </div>
+        <pre class="debug-output" id="debug-extract-output">// Clique em um dos botões acima para testar Recorte de Tela, Página Atual ou o Crawler Multi-Páginas.</pre>
+      </section>
+    </div>
+  </main>
+
+  <!-- 4. FOOTER -->
+  <footer class="cyber-footer" id="fullsite">
+    <span>O Cubo (The Cube) v5.0 — Spider Multi-Page & Area Snipper</span>
+    <span>Manifest V3 • Shadow DOM • Multi-Model AI</span>
+  </footer>
+
+  <script src="content.js"></script>
+  <script>
+    const btnTestInspector = document.getElementById("btn-test-inspector");
+    const btnTestSnipper = document.getElementById("btn-test-snipper");
+    const btnTestFullsite = document.getElementById("btn-test-fullsite");
+    const btnTestSpider = document.getElementById("btn-test-spider");
+    const debugOutput = document.getElementById("debug-extract-output");
+
+    let localInspectActive = false;
+
+    btnTestInspector.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!window.__oCuboDebug) return;
+      localInspectActive = !localInspectActive;
+      if (localInspectActive) {
+        window.__oCuboDebug.startInspection();
+        btnTestInspector.textContent = "⏹ Desativar Inspetor Dinâmico";
+      } else {
+        window.__oCuboDebug.stopInspection();
+        btnTestInspector.textContent = "🎯 Ativar Inspetor Dinâmico";
+      }
+    });
+
+    btnTestSnipper.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!window.__oCuboDebug) return;
+      window.__oCuboDebug.startAreaSnipper();
+      debugOutput.textContent = "✂️ Modo Recorte de Tela ativo! Clique e arraste na página para capturar os itens da região.";
+    });
+
+    btnTestFullsite.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!window.__oCuboDebug) return;
+      debugOutput.textContent = "Clonando visual completo do site (CSS, SVGs, Fontes e Imagens)...";
+      const payload = await window.__oCuboDebug.captureFullSite();
+      debugOutput.textContent = payload.standaloneHtml;
+    });
+
+    btnTestSpider.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!window.__oCuboDebug) return;
+      const links = window.__oCuboDebug.discoverInternalLinks();
+      debugOutput.textContent = `🕸️ Encontrados ${links.length} links internos. Clonando páginas...`;
+      const payload = await window.__oCuboDebug.crawlAndCloneMultiPageSite();
+      debugOutput.textContent = `✅ ${payload.pagesCount} páginas clonadas com sucesso!\n\n` + payload.standaloneHtml.slice(0, 1200) + "...";
+    });
+
+    window.addEventListener("o-cubo-captured", (e) => {
+      if (e.detail && e.detail.elementLabel) {
+        debugOutput.textContent = `✅ Capturado: ${e.detail.elementLabel}\n\n` + (e.detail.standaloneHtml || "").slice(0, 1200) + "...";
+      }
+    });
+  </script>
+</body>
+</html>
