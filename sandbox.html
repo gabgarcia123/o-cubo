@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O Cubo 4.0 - Sandbox Live Preview</title>
+  <!-- Tailwind CSS via CDN para quando renderizar JSX/Vue/Tailwind snippets -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070b09;
+      color: #e2f8ee;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    #preview-stage {
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        radial-gradient(rgba(0, 255, 136, 0.08) 1px, transparent 1px),
+        radial-gradient(rgba(0, 255, 136, 0.04) 1px, #070b09 1px);
+      background-size: 24px 24px;
+      background-position: 0 0, 12px 12px;
+    }
+
+    /* Frame dedicado para documentos HTML completos (Clone Visual 1:1 de Site Inteiro) */
+    #full-doc-frame {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      display: none;
+      background: #ffffff;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: rgba(0, 255, 136, 0.55);
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 12px;
+      border: 1px dashed rgba(0, 255, 136, 0.28);
+      padding: 28px 20px;
+      border-radius: 10px;
+      background: rgba(7, 11, 9, 0.8);
+      max-width: 320px;
+      margin: 40px auto;
+    }
+  </style>
+  <style id="extracted-cube-styles"></style>
+</head>
+<body>
+  <iframe id="full-doc-frame" title="Visual Full Site Clone"></iframe>
+  <div id="preview-stage">
+    <div class="empty-state">
+      [ AGUARDANDO COMPONENTE OU SITE ]<br />
+      Capture um elemento ou clique em "🌐 Site Inteiro" para visualizar o Clone Visual aqui.
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById("preview-stage");
+    const fullDocFrame = document.getElementById("full-doc-frame");
+    const extractedStyleTag = document.getElementById("extracted-cube-styles");
+
+    function hydrateDataCubeStyles(container) {
+      const styledNodes = container.querySelectorAll("[data-cube-style]");
+      if (styledNodes.length === 0) {
+        extractedStyleTag.textContent = "";
+        return;
+      }
+      const rules = [];
+      styledNodes.forEach((node, idx) => {
+        const rawStyle = node.getAttribute("data-cube-style");
+        if (rawStyle) {
+          const cls = `cube-hydrated-${idx}`;
+          node.classList.add(cls);
+          rules.push(`.${cls} { ${rawStyle} }`);
+        }
+      });
+      extractedStyleTag.textContent = rules.join("\n");
+    }
+
+    function isCompleteHtmlDocument(raw) {
+      if (!raw) return false;
+      const trimmed = raw.trim().replace(/^```[a-zA-Z0-9_-]*\s*/i, "").replace(/\s*```$/, "").trim();
+      return /^<!doctype html>/i.test(trimmed) || /^<html[\s>]/i.test(trimmed);
+    }
+
+    function normalizeSnippetForPreview(rawCode, stack) {
+      if (!rawCode || !rawCode.trim()) {
+        return '<div class="empty-state">Nenhum código disponível para renderizar.</div>';
+      }
+
+      let code = rawCode.trim();
+      code = code.replace(/^```[a-zA-Z0-9_-]*\s*/i, "").replace(/\s*```$/, "").trim();
+
+      if (stack === "vue-tailwind" || /<template[\s>]/i.test(code)) {
+        const templateMatch = code.match(/<template[^>]*>([\s\S]*?)<\/template>/i);
+        const styleMatch = code.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+        const templateHtml = templateMatch ? templateMatch[1].trim() : code;
+        const styleBlock = styleMatch ? `<style>${styleMatch[1]}</style>` : "";
+        return `${styleBlock}\n${templateHtml}`;
+      }
+
+      const looksLikeReact =
+        stack === "react-tailwind" ||
+        stack === "nextjs-tailwind" ||
+        /export\s+default/i.test(code) ||
+        /className=/.test(code);
+
+      if (looksLikeReact) {
+        const returnMatch = code.match(/return\s*\(\s*([\s\S]*?)\s*\)\s*;?\s*\}[;\s]*$/);
+        if (returnMatch && returnMatch[1]) {
+          code = returnMatch[1].trim();
+        } else {
+          code = code
+            .replace(/^["']use client["'];?\s*/i, "")
+            .replace(/^import\s+.*?;?\s*$/gm, "")
+            .replace(/export\s+default\s+function\s+\w+\s*\([^)]*\)\s*\{\s*return\s+/i, "")
+            .replace(/\}\s*;?\s*$/, "");
+        }
+
+        code = code.replace(/^<>\s*/, "").replace(/\s*<\/>$/, "");
+        code = code.replace(/\bclassName=/g, "class=");
+        code = code.replace(/\bhtmlFor=/g, "for=");
+        code = code.replace(/\bon[A-Z]\w*=\{[^}]*\}/g, "");
+        code = code.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+        code = code.replace(/\{\s*["']([^"']*)["']\s*\}/g, "$1");
+      }
+
+      return code;
+    }
+
+    function applyPreview(data) {
+      if (!data || !data.code) return;
+      const cleaned = data.code.trim().replace(/^```[a-zA-Z0-9_-]*\s*/i, "").replace(/\s*```$/, "").trim();
+
+      // Se for um documento HTML completo (como o Clone Visual 1:1 de Site Inteiro ou Componente),
+      // renderiza dentro do #full-doc-frame com srcdoc para preservar 100% do <head>, <base>, fontes e CSS originais!
+      if (isCompleteHtmlDocument(cleaned)) {
+        stage.style.display = "none";
+        fullDocFrame.style.display = "block";
+        fullDocFrame.srcdoc = cleaned;
+        return;
+      }
+
+      // Caso contrário, é um componente JSX/Vue/Snippet
+      fullDocFrame.style.display = "none";
+      stage.style.display = data.isFullPage ? "block" : "flex";
+      stage.style.padding = data.isFullPage ? "0" : "20px";
+
+      const htmlToRender = normalizeSnippetForPreview(cleaned, data.stack);
+      stage.innerHTML = data.isFullPage
+        ? `<div class="w-full min-h-screen">${htmlToRender}</div>`
+        : `<div class="w-full flex items-center justify-center">${htmlToRender}</div>`;
+
+      hydrateDataCubeStyles(stage);
+    }
+
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data || data.type !== "RENDER_PREVIEW") return;
+      applyPreview(data);
+
+      if (event.source) {
+        event.source.postMessage({ type: "PREVIEW_RENDERED", ok: true }, "*");
+      }
+    });
+
+    if (window.opener) {
+      window.opener.postMessage({ type: "SANDBOX_FULLSCREEN_READY" }, "*");
+    }
+  </script>
+</body>
+</html>
