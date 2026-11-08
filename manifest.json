@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "O Cubo (The Cube) v5.2 - Spider Multi-Page & Area Snipper",
+  "version": "5.2.0",
+  "description": "Clonador visual 1:1 de componentes, recortes de tela livre, páginas inteiras e sites multi-páginas (links internos + auto-download .html).",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Abrir O Cubo (AI UI Cloner)"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "sandbox": {
+    "pages": [
+      "sandbox.html"
+    ]
+  }
+}
